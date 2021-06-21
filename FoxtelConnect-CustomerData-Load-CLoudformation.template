@@ -1,0 +1,153 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Resources" : {
+    "FoxtelIVRCustomerDataTable" : {
+      "Type" : "AWS::DynamoDB::Table",
+      "Properties" : {
+        "AttributeDefinitions" : [
+          {
+            "AttributeName" : "AccountNumber",
+            "AttributeType" : "S"
+          },
+          {
+            "AttributeName" : "PhoneNumber1",
+            "AttributeType" : "S"
+          },
+          {
+            "AttributeName" : "PhoneNumber2",
+            "AttributeType" : "S"
+          }
+        ],
+        "KeySchema" : [
+          {
+            "AttributeName" : "AccountNumber",
+            "KeyType" : "HASH"
+          }
+        ],
+        "ProvisionedThroughput" : {
+          "ReadCapacityUnits" : "5",
+          "WriteCapacityUnits" : "5"
+        },
+        "TableName" : "stage-foxtel-customer-data",
+        "GlobalSecondaryIndexes" : [{
+          "IndexName" : "phonenumber1-index",
+          "KeySchema" : [
+            {
+              "AttributeName" : "PhoneNumber1",
+              "KeyType" : "HASH"
+            }
+          ],
+          "Projection" : {
+            "ProjectionType" : "ALL"
+          },
+          "ProvisionedThroughput" : {
+            "ReadCapacityUnits" : "5",
+            "WriteCapacityUnits" : "5"
+          }
+        },
+          {
+            "IndexName" : "phonenumber2-index",
+            "KeySchema" : [
+              {
+                "AttributeName" : "PhoneNumber2",
+                "KeyType" : "HASH"
+              }
+            ],
+            "Projection" : {
+              "ProjectionType" : "ALL"
+            },
+            "ProvisionedThroughput" : {
+              "ReadCapacityUnits" : "5",
+              "WriteCapacityUnits" : "5"
+            }
+          }]
+      },
+      "DependsOn" : "FoxtelIVRCustomerDataLoadQueuePolicy"
+    },
+
+    "FoxtelIVRCustomerDataTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties" : {
+        "TopicName" : "FoxtelIVRCustomerDataTopic",
+        "DisplayName" : "Foxtel IVR-Customer Data Topic"
+      }
+    },
+    "IVRDataLoadSubscription": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "FoxtelIVRCustomerDataTopic"
+        },
+        "Endpoint": {
+          "Fn::GetAtt": ["FoxtelIVRCustomerDataLoadQueue", "Arn"]
+        },
+        "Protocol": "sqs",
+        "RawMessageDelivery": "true"
+      }
+    },
+    "FoxtelIVRCustomerDataLoadQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Properties": {
+        "QueueName" : "FoxtelIVRCustomerDataLoadQueue"
+      }
+    },
+    "FoxtelIVRCustomerDataLoadQueuePolicy": {
+      "Type" : "AWS::SQS::QueuePolicy",
+      "Properties" : {
+        "Queues" : [
+          { "Ref" : "FoxtelIVRCustomerDataLoadQueue" }
+        ],
+        "PolicyDocument": {
+          "Id" : "FoxtelIVRSQSPolicy",
+          "Version" : "2012-10-17",
+          "Statement" : [ {
+            "Sid" : "Allow-User-SendMessage",
+            "Effect" : "Allow",
+            "Principal":{
+              "AWS": "*"
+            },
+            "Action": "SQS:SendMessage",
+            "Resource" : {
+              "Fn::GetAtt": ["FoxtelIVRCustomerDataLoadQueue", "Arn"]
+            },
+            "Condition": {
+              "ArnLike": {
+                "aws:SourceArn": {
+                  "Ref": "FoxtelIVRCustomerDataTopic"
+                }
+              }
+            }
+          }]
+        }
+      },
+      "DependsOn" : "FoxtelIVRCustomerDataTopic"
+    }
+  },
+
+  "Outputs": {
+    "CustomerTable": {
+      "Description": "stage-foxtel-customer-data table Created using this template.",
+      "Value": {
+        "Ref": "FoxtelIVRCustomerDataTable"
+      }
+    },
+    "DataTopic": {
+      "Description": "FoxtelIVRCustomerDataTopic Created using this template.",
+      "Value": {
+        "Ref": "FoxtelIVRCustomerDataTopic"
+      }
+    },
+    "DataQueue": {
+      "Description": "FoxtelIVRCustomerDataLoadQueue Created using this template.",
+      "Value": {
+        "Ref": "FoxtelIVRCustomerDataLoadQueue"
+      }
+    },
+    "QueuePolicy": {
+      "Description": "FoxtelIVRCustomerDataLoadQueuePolicy Created using this template.",
+      "Value": {
+        "Ref": "FoxtelIVRCustomerDataLoadQueuePolicy"
+      }
+    }
+  }
+}
