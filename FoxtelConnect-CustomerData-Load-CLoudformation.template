@@ -151,7 +151,7 @@
         "Ref": "FoxtelIVRCustomerDataLoadQueuePolicy"
       }
     },
-    "S3-bucket": {
+    "S3bucket": {
       "Description": "S3 bucket Created using this template.",
       "Value": {
         "Ref": "S3Bucket"
