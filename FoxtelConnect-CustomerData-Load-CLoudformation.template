@@ -121,10 +121,12 @@
         }
       },
       "DependsOn" : "FoxtelIVRCustomerDataTopic"
-    }
+    },
+    "S3Bucket": {
+            "Type": "AWS::S3::Bucket"
+        }
   },
-
-  "Outputs": {
+   "Outputs": {
     "CustomerTable": {
       "Description": "stage-foxtel-customer-data table Created using this template.",
       "Value": {
@@ -147,6 +149,12 @@
       "Description": "FoxtelIVRCustomerDataLoadQueuePolicy Created using this template.",
       "Value": {
         "Ref": "FoxtelIVRCustomerDataLoadQueuePolicy"
+      }
+    },
+    "S3-bucket": {
+      "Description": "S3 bucket Created using this template.",
+      "Value": {
+        "Ref": "S3Bucket"
       }
     }
   }
